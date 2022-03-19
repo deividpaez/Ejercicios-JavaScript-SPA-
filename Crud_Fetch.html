@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD API REST FETCH</title>
+</head>
+
+<body>
+    <h1>CRUD API REST FETCH</h1>
+    <section class="crud">
+        <article>
+            <h2 class="crud-title">Agregar Santo</h2>
+            <form class="crud-form">
+                <input type="text" name="nombre" placeholder="nombre" required>
+                <br>
+                <input type="text" placeholder="constelacion" name="constelacion" required>
+                <input type="submit" name="Enviar" value="Agregar">
+                <input type="hidden" name="id">
+            </form>
+            <br>
+        </article>
+        <article>
+
+            <table class="crud-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Costelacion</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </article>
+    </section>
+    <template id="crud-template">
+        <tr>
+            <td class="name"></td>
+            <td class="constellation"></td>
+            <td>
+                <button class="edit">Editar</button>
+                <button class="delete">Eliminar</button>
+            </td>
+        </tr>
+    </template>
+    <script>
+        
+        const d = document,
+            $table = d.querySelector(".crud-table"),
+            $form = d.querySelector(".crud-form"),
+            $title = d.querySelector(".crud-title"),
+            $template = d.getElementById("crud-template").content,
+            $fragment = d.createDocumentFragment();
+
+        const getAll = async () => {
+            try {
+
+                let res = await fetch("http://localhost:5555/santos", {}),
+                    json = await res.json();
+                if (res.ok == false) throw {
+                    status: res.status,
+                    statusText: res.statusText
+                };
+                json.forEach(element => {
+                    $template.querySelector(".name").textContent = element.nombre;
+                    $template.querySelector(".constellation").textContent = element.constelacion;
+                    $template.querySelector(".edit").dataset.id = element.id;
+                    $template.querySelector(".edit").dataset.name = element.nombre;
+                    $template.querySelector(".edit").dataset.constellation = element.constelacion;
+                    $template.querySelector(".delete").dataset.id = element.id;
+                    let $clone = d.importNode($template, true)
+                    $fragment.appendChild($clone)
+
+                });
+                $table.querySelector("tbody").appendChild($fragment)
+
+
+            } catch (error) {
+                console.log(error.status)
+            } finally {
+
+            }
+        }
+
+        d.addEventListener("DOMContentloaded", getAll())
+        d.addEventListener("submit", (e) => {
+            e.preventDefault()
+            if (e.target == $form) {
+
+                if (!e.target.id.value) {
+                    //POST
+                    console.log(" no existe un id")
+                    const push = async (data = {}) => {
+                        try {
+                            let res = await fetch("http://localhost:5555/santos", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            location.reload()
+                            if (!res.ok) throw {
+                                errorr: res.status
+                            }
+
+                        } catch (error) {
+                            console.log(error.errorr, "hola")
+                        }
+
+                    }
+                    push({
+                        nombre: e.target.nombre.value,
+                        constelacion: e.target.constelacion.value
+                    })
+                } else {
+                    //PUT
+                    const put = async (data = {}) => {
+                        try {
+                            let res = await fetch(`http://localhost:5555/santos/${e.target.id.value}`, {
+                                method: "PUT",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            location.reload()
+                            if (!res.ok) throw {
+                                errorr: res.status
+                            }
+
+                        } catch (error) {
+                            console.log(error.errorr, "hola")
+                        }
+                    }
+
+                    put({
+                        nombre: e.target.nombre.value,
+                        constelacion: e.target.constelacion.value
+                    })
+
+                }
+            }
+
+
+        })
+    
+        d.addEventListener("click", (e) => {
+            if (e.target.matches(".edit")) {
+                $form.id.value = e.target.dataset.id;
+                $form.nombre.value = e.target.dataset.name
+                $form.constelacion.value = e.target.dataset.constellation
+                $title.textContent = "Editar santo"
+                $form.Enviar.value = "Actualizar"
+            }
+            if (e.target.matches(".delete")) {
+                (async () => {
+                    let respon = confirm(
+                        `¿Estas Seguro que quieres eliminar el Id ${e.target.dataset.id}?`)
+                    if (!respon) {
+                        alert(`Ok el Id: ${e.target.dataset.id} No se eliminara`)
+                    } else {
+                        try {
+                            let res = await fetch(
+                            `http://localhost:5555/santos/${e.target.dataset.id}`, {
+                                method: "DELETE"
+                            })
+                            location.reload()
+                            if (!res.ok) throw {
+                                errorr: res.status
+                            }
+
+                        } catch (error) {
+                            console.log(error.errorr, "hola")
+                        }
+                    }
+
+                })();
+            }
+        })
+    </script>
+</body>
+
+</html>
